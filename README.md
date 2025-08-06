@@ -5,7 +5,10 @@
 这是一个基于AI的智能简历分析系统，支持多种文件格式上传和岗位匹配度计算。系统使用豆包API进行智能分析，结合多种机器学习算法，为求职者和招聘者提供精准的简历匹配分析。
 ## demo
 
-![Uploading image.png…]()
+<img width="1280" height="707" alt="image" src="https://github.com/user-attachments/assets/a061750d-0a1d-4e80-955f-ae8de9a9d006" />
+
+<img width="1280" height="707" alt="image" src="https://github.com/user-attachments/assets/67e4402c-5bca-4157-8719-4e03055e1eae" />
+
 
 ## 功能特性
 
@@ -284,6 +287,7 @@ A: 可以修改`job_matcher.py`中的权重配置和算法逻辑。
 ## 许可证
 
 MIT License - 详见LICENSE文件
+
 
 
 
