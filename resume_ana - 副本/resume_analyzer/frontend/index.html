@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能简历分析系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.1);
+        }
+        
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto;
+        }
+        
+        .score-excellent { background: linear-gradient(135deg, #28a745, #20c997); }
+        .score-good { background: linear-gradient(135deg, #17a2b8, #6f42c1); }
+        .score-average { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+        .score-poor { background: linear-gradient(135deg, #dc3545, #e83e8c); }
+        
+        .skill-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 2px;
+        }
+        
+        .missing-skill-tag {
+            background: linear-gradient(135deg, #dc3545, #e83e8c);
+        }
+        
+        .analysis-section {
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-content {
+            min-height: 400px;
+        }
+        
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .batch-upload-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, #dc3545, #e83e8c);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="main-container p-4">
+            <!-- 头部 -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-primary">
+                    <i class="fas fa-brain me-3"></i>智能简历分析系统
+                </h1>
+                <p class="lead text-muted">AI驱动的简历与岗位智能匹配分析</p>
+            </div>
+            
+            <!-- 导航标签 -->
+            <ul class="nav nav-pills nav-justified mb-4" id="analysisTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="single-tab" data-bs-toggle="pill" data-bs-target="#single" type="button" role="tab">
+                        <i class="fas fa-file-alt me-2"></i>单个简历分析
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="batch-tab" data-bs-toggle="pill" data-bs-target="#batch" type="button" role="tab">
+                        <i class="fas fa-layer-group me-2"></i>批量简历分析
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="url-tab" data-bs-toggle="pill" data-bs-target="#url" type="button" role="tab">
+                        <i class="fas fa-link me-2"></i>网页简历分析
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- 标签内容 -->
+            <div class="tab-content" id="analysisTabContent">
+                <!-- 单个简历分析 -->
+                <div class="tab-pane fade show active" id="single" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>上传简历</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="singleAnalysisForm">
+                                        <div class="upload-area" id="uploadArea">
+                                            <div class="upload-icon">
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            </div>
+                                            <h5>拖拽文件到此处或点击选择</h5>
+                                            <p class="text-muted">支持 PDF、Word、Markdown 格式</p>
+                                            <input type="file" id="resumeFile" name="file" accept=".pdf,.docx,.doc,.md,.txt" style="display: none;">
+                                            <button type="button" class="btn btn-primary" onclick="document.getElementById('resumeFile').click()">
+                                                <i class="fas fa-folder-open me-2"></i>选择文件
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="mt-4">
+                                            <label for="jobTitle" class="form-label fw-bold">目标岗位</label>
+                                            <input type="text" class="form-control" id="jobTitle" name="job_title" placeholder="例如：Python后端开发工程师" required>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <label for="jobDescription" class="form-label fw-bold">岗位描述</label>
+                                            <textarea class="form-control" id="jobDescription" name="job_description" rows="6" 
+                                                placeholder="请输入完整的岗位描述，包括技能要求、工作职责等..." required></textarea>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary w-100 mt-4">
+                                            <i class="fas fa-search me-2"></i>开始分析
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>分析结果</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="singleResults">
+                                        <div class="text-center text-muted py-5">
+                                            <i class="fas fa-chart-line fa-3x mb-3"></i>
+                                            <p>上传简历并填写岗位信息后开始分析</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 批量简历分析 -->
+                <div class="tab-pane fade" id="batch" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>批量简历分析</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="batchAnalysisForm">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="upload-area" id="batchUploadArea">
+                                            <div class="upload-icon">
+                                                <i class="fas fa-files"></i>
+                                            </div>
+                                            <h5>批量上传简历文件</h5>
+                                            <p class="text-muted">可同时选择多个文件</p>
+                                            <input type="file" id="batchResumeFiles" name="files" multiple accept=".pdf,.docx,.doc,.md,.txt" style="display: none;">
+                                            <button type="button" class="btn btn-primary" onclick="document.getElementById('batchResumeFiles').click()">
+                                                <i class="fas fa-folder-open me-2"></i>选择多个文件
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="mt-4">
+                                            <label for="batchJobTitle" class="form-label fw-bold">目标岗位</label>
+                                            <input type="text" class="form-control" id="batchJobTitle" name="job_title" placeholder="例如：前端开发工程师" required>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <label for="batchJobDescription" class="form-label fw-bold">岗位描述</label>
+                                            <textarea class="form-control" id="batchJobDescription" name="job_description" rows="4" 
+                                                placeholder="请输入岗位要求..." required></textarea>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary w-100 mt-4">
+                                            <i class="fas fa-cogs me-2"></i>批量分析
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="col-lg-6">
+                                        <div id="selectedFiles" class="mb-3">
+                                            <h6>已选择的文件：</h6>
+                                            <div id="fileList" class="text-muted">暂无文件</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            <div id="batchResults" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 网页简历分析 -->
+                <div class="tab-pane fade" id="url" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-8 mx-auto">
+                            <div class="card">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0"><i class="fas fa-link me-2"></i>网页简历分析</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="urlAnalysisForm">
+                                        <div class="mb-4">
+                                            <label for="resumeUrl" class="form-label fw-bold">简历网页链接</label>
+                                            <input type="url" class="form-control" id="resumeUrl" name="url" 
+                                                placeholder="https://example.com/resume" required>
+                                            <div class="form-text">支持在线简历、个人网站、LinkedIn、飞书文档等</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="urlJobTitle" class="form-label fw-bold">目标岗位</label>
+                                            <input type="text" class="form-control" id="urlJobTitle" name="job_title" 
+                                                placeholder="例如：数据分析师" required>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <label for="urlJobDescription" class="form-label fw-bold">岗位描述</label>
+                                            <textarea class="form-control" id="urlJobDescription" name="job_description" rows="5" 
+                                                placeholder="请输入详细的岗位要求..." required></textarea>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-globe me-2"></i>分析网页简历
+                                        </button>
+                                    </form>
+                                    
+                                    <div id="urlResults" class="mt-4"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 加载动画 -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">AI正在分析中，请稍候...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 自定义JS -->
+    <script src="app.js"></script>
+</body>
+</html>
+
